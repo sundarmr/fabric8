@@ -33,6 +33,8 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test basic {@link ZooKeeperClusterBootstrap} functionality
@@ -54,7 +56,7 @@ public class BootstrapServiceTest  {
                 builder.addBundleManifestVersion(2);
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleVersion("1.0.0");
-                builder.addImportPackages(ServiceLocator.class, FabricService.class);
+                builder.addImportPackages(ServiceLocator.class, FabricService.class, Logger.class);
                 return builder.openStream();
             }
         });
@@ -63,6 +65,7 @@ public class BootstrapServiceTest  {
 
     @Test
     public void testZooKeeperClusterBootstrapAvailable() throws Exception {
+        LoggerFactory.getLogger(this.getClass()).info("GG: ########### BootstrapServiceTest #########");
         ZooKeeperClusterBootstrap bootstrap = ServiceLocator.getRequiredService(ZooKeeperClusterBootstrap.class);
         Assert.assertNotNull("ZooKeeperClusterBootstrap not null", bootstrap);
     }

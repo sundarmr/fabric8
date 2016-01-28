@@ -184,12 +184,14 @@ public final class FabricServiceImpl extends AbstractComponent implements Fabric
 
     @Activate
     void activate(BundleContext bundleContext) {
+        LOGGER.info("GG: FabricServiceImpl.activate: " + System.identityHashCode(this));
         this.bundleContext = bundleContext;
         activateComponent();
     }
 
     @Deactivate
     void deactivate() {
+        LOGGER.info("GG: FabricServiceImpl.deactivate: " + System.identityHashCode(this));
         deactivateComponent();
     }
 
@@ -1413,10 +1415,12 @@ public final class FabricServiceImpl extends AbstractComponent implements Fabric
     @VisibleForTesting
     public void bindPlaceholderResolver(PlaceholderResolver resolver) {
         String resolverScheme = resolver.getScheme();
+        LOGGER.info("GG: fabric service (" + System.identityHashCode(this) + ") bindPlaceholderResolver (" + resolver.getClass().getName() + ": " + System.identityHashCode(resolver) + ")");
         placeholderResolvers.put(resolverScheme, resolver);
     }
     void unbindPlaceholderResolver(PlaceholderResolver resolver) {
         String resolverScheme = resolver.getScheme();
+        LOGGER.info("GG: fabric service (" + System.identityHashCode(this) + ") unbindPlaceholderResolver (" + resolver.getClass().getName() + ": " + System.identityHashCode(resolver) + ")");
         placeholderResolvers.remove(resolverScheme);
     }
 }

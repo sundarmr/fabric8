@@ -27,6 +27,8 @@ import org.apache.zookeeper.data.Stat;
 
 import io.fabric8.api.RuntimeProperties;
 import io.fabric8.zookeeper.ZkPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -44,6 +46,8 @@ import java.util.Map;
 import java.util.Properties;
 
 public final class ZooKeeperUtils {
+
+    public static Logger LOG = LoggerFactory.getLogger(ZooKeeperUtils.class);
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
     private static final String CONTAINERS_NODE = "/fabric/authentication/containers";
@@ -78,6 +82,7 @@ public final class ZooKeeperUtils {
 
     public static void add(CuratorFramework curator, String path, String value) throws Exception {
         if (curator.checkExists().forPath(path) == null) {
+            LOG.info("GG: add(" + path + ")");
             curator.setData().forPath(path, value != null ? value.getBytes(UTF_8) : null);
         } else {
             String data = getStringData(curator, path);
@@ -88,6 +93,7 @@ public final class ZooKeeperUtils {
                 data += " ";
             }
             data += value;
+            LOG.info("GG: add(" + path + ")");
             curator.setData().forPath(path, data.getBytes(UTF_8));
         }
     }
@@ -218,8 +224,10 @@ public final class ZooKeeperUtils {
 
     public static void setData(CuratorFramework curator, String path, byte[] value) throws Exception {
         if (curator.checkExists().forPath(path) == null) {
+            LOG.info("GG: setData(" + path + ") create()");
             curator.create().creatingParentsIfNeeded().forPath(path, value != null ? value : null);
         }
+        LOG.info("GG: setData(" + path + ") setData()");
         curator.setData().forPath(path, value != null ? value : null);
     }
 
@@ -229,8 +237,10 @@ public final class ZooKeeperUtils {
 
     public static void setData(CuratorFramework curator, String path, byte[] value, CreateMode createMode) throws Exception {
         if (curator.checkExists().forPath(path) == null) {
+            LOG.info("GG: setData(" + path + ")+createMode(" + createMode + ") create()");
             curator.create().creatingParentsIfNeeded().withMode(createMode).forPath(path, value != null ? value : null);
         }
+        LOG.info("GG: setData(" + path + ")+createMode(" + createMode + ") setData()");
         curator.setData().forPath(path, value != null ? value : null);
     }
 
@@ -247,11 +257,13 @@ public final class ZooKeeperUtils {
     }
 
     public static String create(CuratorFramework curator, String path, byte[] data, CreateMode createMode) throws Exception {
+        LOG.info("GG: create(" + path + ")+createMode(" + createMode + ")");
         return curator.create().creatingParentsIfNeeded().withMode(createMode).forPath(path, data);
     }
 
     public static void createDefault(CuratorFramework curator, String path, String value) throws Exception {
         if (curator.checkExists().forPath(path) == null) {
+            LOG.info("GG: createDefault(" + path + ")");
             curator.create().creatingParentsIfNeeded().forPath(path, value != null ? value.getBytes(UTF_8) : null);
         }
     }
@@ -262,6 +274,7 @@ public final class ZooKeeperUtils {
                 deleteSafe(curator, path + "/" + child);
             }
             try {
+                LOG.info("GG: deleteSafe(" + path + ")");
                 curator.delete().forPath(path);
             } catch (KeeperException.NotEmptyException ex) {
                 deleteSafe(curator, path);
@@ -270,6 +283,7 @@ public final class ZooKeeperUtils {
     }
 
     public static void delete(CuratorFramework curator, String path) throws Exception {
+        LOG.info("GG: delete(" + path + ")");
         curator.delete().forPath(path);
     }
 

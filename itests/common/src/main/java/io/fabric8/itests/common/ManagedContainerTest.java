@@ -22,6 +22,7 @@ import io.fabric8.runtime.container.ManagedContainer;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test basic {@link ManagedContainer} functionality
@@ -32,6 +33,7 @@ public class ManagedContainerTest {
 
     @Test
     public void testContainerLifecycle() throws Exception {
+        LoggerFactory.getLogger(this.getClass()).info("GG: ########### ManagedContainerTest #########");
         ContainerConfigurationBuilder builder = ContainerConfigurationBuilder.create();
         ContainerConfiguration configuration = builder.setTargetDirectory("target/managed-container").getConfiguration();
         ManagedContainer<?> container = ManagedContainer.Factory.create(configuration);

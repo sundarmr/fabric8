@@ -148,15 +148,19 @@ public class BootstrapConfiguration extends AbstractComponent {
 
     @Activate
     void activate(ComponentContext componentContext, Map<String, ?> conf) throws Exception {
+        LOGGER.info("GG: BootstrapConfiguration.activate(" + conf + ")");
         this.componentContext = componentContext;
         configureInternal(conf);
         bootIfNeeded();
         activateComponent();
+        LOGGER.info("GG: BootstrapConfiguration.activate() complete");
     }
 
     @Modified
     void modified(Map<String, ?> conf) throws Exception {
+        LOGGER.info("GG: BootstrapConfiguration.modified(" + conf + ")");
         configureInternal(conf);
+        LOGGER.info("GG: BootstrapConfiguration.modified() complete");
     }
 
     @Deactivate
@@ -214,15 +218,23 @@ public class BootstrapConfiguration extends AbstractComponent {
     void bootIfNeeded() throws IOException, InterruptedException {
         BundleContext bundleContext = componentContext.getBundleContext();
         boolean isCreated = checkCreated(bundleContext);
+        LOGGER.info("GG: bootIfNeeded(). isCreated = " + isCreated + ", zookeeperUrl = " + zookeeperUrl + ", isEnsembleStart = " + options.isEnsembleStart());
 
         if (!Strings.isNotBlank(zookeeperUrl) && !isCreated && options.isEnsembleStart()) {
             String connectionUrl = getConnectionUrl(options);
+            LOGGER.info("GG: bootIfNeeded(). connectionUrl = " + connectionUrl);
             DataStoreOptions bootOptions = new DataStoreOptions(runtimeId, homeDir, connectionUrl, options);
             runtimeProperties.get().putRuntimeAttribute(DataStoreTemplate.class, new DataStoreBootstrapTemplate(bootOptions));
 
+            LOGGER.info("GG: bootIfNeeded(), createOrUpdateDataStoreConfig()");
             createOrUpdateDataStoreConfig(options);
+            LOGGER.info("GG: bootIfNeeded(), createOrUpdateDataStoreConfig(), complete");
+            LOGGER.info("GG: bootIfNeeded(), createZooKeeeperServerConfig()");
             createZooKeeeperServerConfig(componentContext.getBundleContext(), options);
+            LOGGER.info("GG: bootIfNeeded(), createZooKeeeperServerConfig(), complete");
+            LOGGER.info("GG: bootIfNeeded(), createZooKeeeperClientConfig(), connectionUrl = " + connectionUrl);
             createZooKeeeperClientConfig(componentContext.getBundleContext(), connectionUrl, options);
+            LOGGER.info("GG: bootIfNeeded(), createZooKeeeperClientConfig(), complete");
 
             // On restart, the configuration should be available in configadmin
             markCreated(bundleContext);

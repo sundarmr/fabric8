@@ -91,12 +91,14 @@ public final class FabricMBeanRegistrationListener extends AbstractComponent imp
 
     @Activate
     void activate() {
+        LOGGER.info("GG: FMRL.activate(): " + System.identityHashCode(this));
         registerMBeanServer();
         activateComponent();
     }
 
     @Deactivate
     void deactivate() throws InterruptedException {
+        LOGGER.info("GG: FMRL.deactivate(): " + System.identityHashCode(this));
         deactivateComponent();
         unregisterMBeanServer();
         shutdownTracker.stop();
@@ -106,10 +108,12 @@ public final class FabricMBeanRegistrationListener extends AbstractComponent imp
 
     @Override
     public void handleNotification(final Notification notif, final Object o) {
+        LOGGER.info("GG: FMRL: " + System.identityHashCode(this) + " handleNotification(" + notif + ", " + o + ")");
         executor.submit(new Runnable() {
             public void run() {
                 if (shutdownTracker.attemptRetain()) {
                     try {
+                        LOGGER.info("GG: FMRL: " + System.identityHashCode(FabricMBeanRegistrationListener.this) + " doHandleNotification(" + notif + ", " + o + ")");
                         doHandleNotification(notif, o);
                     } finally {
                         shutdownTracker.release();
@@ -146,15 +150,19 @@ public final class FabricMBeanRegistrationListener extends AbstractComponent imp
 
     @Override
     public void stateChanged(CuratorFramework client, ConnectionState newState) {
+        LOGGER.info("GG: FMRL(" + System.identityHashCode(this) + "): state changed for curator " + System.identityHashCode(client) + ": " + newState + ", submitting");
         switch (newState) {
         case CONNECTED:
         case RECONNECTED:
             executor.submit(new Runnable() {
                 public void run() {
+                    LOGGER.info("GG: FMRL(" + System.identityHashCode(FabricMBeanRegistrationListener.this) + "): state changed - handler");
                     if (shutdownTracker.attemptRetain()) {
                         try {
+                            LOGGER.info("GG: FMRL(" + System.identityHashCode(FabricMBeanRegistrationListener.this) + "): state changed - updateProcessId()");
                             updateProcessId();
                             try {
+                                LOGGER.info("GG: FMRL(" + System.identityHashCode(FabricMBeanRegistrationListener.this) + "): state changed - registerDomains()");
                                 registerDomains();
                             } catch (Exception e) {
                                 LOGGER.error(e.getMessage(), e);
@@ -163,6 +171,7 @@ public final class FabricMBeanRegistrationListener extends AbstractComponent imp
                             shutdownTracker.release();
                         }
                     }
+                    LOGGER.info("GG: FMRL(" + System.identityHashCode(FabricMBeanRegistrationListener.this) + "): state changed - handler done");
                 }
             });
             break;

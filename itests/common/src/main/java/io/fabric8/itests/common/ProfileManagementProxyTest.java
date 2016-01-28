@@ -31,6 +31,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test client side {@link ProfileManagement} test
@@ -48,6 +49,7 @@ public class ProfileManagementProxyTest extends AbstractProfileManagementTest {
     
     @BeforeClass
     public static void beforeClass() throws Exception {
+        LoggerFactory.getLogger(ProfileManagementProxyTest.class).info("GG: ########### ProfileManagementProxyTest #########");
         String jmxServiceURL = "service:jmx:rmi://127.0.0.1:44444/jndi/rmi://127.0.0.1:1099/karaf-root";
         Map<String, Object> env = ManagementUtils.getDefaultEnvironment(jmxServiceURL);
         env.put(JMXConnector.CREDENTIALS, new String[] { credentials[0], credentials[1] });

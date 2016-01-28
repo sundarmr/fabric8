@@ -85,6 +85,8 @@ import static org.osgi.framework.namespace.IdentityNamespace.TYPE_BUNDLE;
 
 public class Deployer {
 
+    public static Logger LOG = LoggerFactory.getLogger(Deployer.class);
+
     public static final int DISPLAY_LOG = 1;
     public static final int DISPLAY_STDOUT = 2;
 
@@ -609,10 +611,13 @@ public class Deployer {
             Set<Feature> set = apply(flatten(newFeatures), map(dstate.features));
             for (Feature feature : set) {
                 Downloader downloader = manager.createDownloader();
+                LOG.info("GG: downloader(" + System.identityHashCode(downloader) + ") created");
                 for (ConfigFile configFile : feature.getConfigurationFiles()) {
                     downloader.download(configFile.getLocation(), null);
                 }
+                LOG.info("GG: downloader(" + System.identityHashCode(downloader) + ") await()...");
                 downloader.await();
+                LOG.info("GG: downloader(" + System.identityHashCode(downloader) + ") await() complete");
             }
         }
 

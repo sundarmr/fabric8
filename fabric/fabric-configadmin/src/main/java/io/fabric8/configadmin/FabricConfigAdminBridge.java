@@ -230,7 +230,9 @@ public final class FabricConfigAdminBridge extends AbstractComponent implements 
                 old.putAll(c);
                 c = old;
             }
+            LOGGER.info("GG: FCAB(" + System.identityHashCode(this) + "): update configuration for PID=" + config.getPid());
             config.update(c);
+            LOGGER.info("GG: FCAB(" + System.identityHashCode(this) + "): update configuration complete for PID=" + config.getPid());
         } else {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Ignoring configuration {} (no changes)", config.getPid());

@@ -124,15 +124,37 @@ public final class ZooKeeperClusterBootstrapImpl extends AbstractComponent imple
 
             LOGGER.info("Create fabric with: {}", options);
 
+            LOGGER.info("GG: stopBundles()");
             stopBundles();
+            LOGGER.info("GG: stopBundles() finished");
 
             BundleContext syscontext = bundleContext.getBundle(0).getBundleContext();
             long bootstrapTimeout = options.getBootstrapTimeout();
 
+//            // ENTESB-4827: delete configuration of org.ops4j.pax.web, as pax-web/jetty is a bit fragile. if we fail
+//            // to update this PID in fabric configadmin bridge, jetty won't start and recreating fabric won't
+//            // start jetty again, because from CM point of view, configuration isn't changed
+//            if (configAdmin.getOptional() != null) {
+//                LOGGER.info("GG: deleting \"org.ops4j.pax.web\" PID");
+//                Configuration paxWebCfg = configAdmin.get().getConfiguration("org.ops4j.pax.web", null);
+//                if (paxWebCfg != null) {
+//                    OsgiUtils.deleteCmConfigurationAndWait(syscontext, paxWebCfg, "org.ops4j.pax.web", bootstrapTimeout, TimeUnit.MILLISECONDS);
+//                }
+//            } else {
+//                LOGGER.info("GG: not deleting \"org.ops4j.pax.web\" PID");
+//            }
+
             RuntimeProperties runtimeProps = runtimeProperties.get();
             BootstrapConfiguration bootConfig = bootstrapConfiguration.get();
             if (options.isClean()) {
-                bootConfig = cleanInternal(syscontext, bootConfig, runtimeProps);
+                try {
+                    LOGGER.info("GG: cleanInternal()");
+                    bootConfig = cleanInternal(syscontext, bootConfig, runtimeProps);
+                    LOGGER.info("GG: cleanInternal() finished");
+                } catch (Exception e) {
+                    LOGGER.info("GG: cleanInternal() exception: " + e.getMessage(), e);
+                    throw e;
+                }
             }
 
             // before we start fabric, register CM listener that'll mark end of work of FabricConfigAdminBridge
@@ -148,19 +170,27 @@ public final class ZooKeeperClusterBootstrapImpl extends AbstractComponent imple
             }, null);
 
             BootstrapCreateHandler createHandler = new BootstrapCreateHandler(syscontext, bootConfig, runtimeProps);
+            LOGGER.info("GG: bootstrapFabric()");
             createHandler.bootstrapFabric(name, homeDir, options);
+            LOGGER.info("GG: bootstrapFabric() finished");
 
+            LOGGER.info("GG: startBundles()");
             startBundles(options);
+            LOGGER.info("GG: startBundles() finished");
 
             long startTime = System.currentTimeMillis();
 
+            LOGGER.info("GG: awaitService(FabricComplete.class, " + bootstrapTimeout + ", ms)");
             ServiceLocator.awaitService(FabricComplete.class, bootstrapTimeout, TimeUnit.MILLISECONDS);
+            LOGGER.info("GG: awaitService(FabricComplete.class, " + bootstrapTimeout + ", ms) complete");
 
             // FabricComplete is registered somewhere in the middle of registering CuratorFramework (SCR activates
             // it when CuratorFramework is registered), but CuratorFramework leads to activation of >100 SCR
             // components, so let's wait for new CuratorComplete service - it is registered after registration
             // of CuratorFramework finishes
+            LOGGER.info("GG: awaitService(CuratorComplete.class, " + bootstrapTimeout + ", ms)");
             ServiceLocator.awaitService(CuratorComplete.class, bootstrapTimeout, TimeUnit.MILLISECONDS);
+            LOGGER.info("GG: awaitService(CuratorComplete.class, " + bootstrapTimeout + ", ms) complete");
 
             // HttpService is registered differently. not as SCR component activation, but after
             // FabricConfigAdminBridge updates (or doesn't touch) org.ops4j.pax.web CM configuration
@@ -168,7 +198,9 @@ public final class ZooKeeperClusterBootstrapImpl extends AbstractComponent imple
             // so we have to have FabricService and ProfileUrlHandler active
             // some ARQ (single container instance) tests failed because tests ended without http service running
             // of course we have to think if all fabric instances need http service
+            LOGGER.info("GG: awaitService(HttpService.class, " + bootstrapTimeout + ", ms)");
             ServiceLocator.awaitService("org.osgi.service.http.HttpService", bootstrapTimeout, TimeUnit.MILLISECONDS);
+            LOGGER.info("GG: awaitService(HttpService.class, " + bootstrapTimeout + ", ms) complete");
 
             // and last wait - too much synchronization never hurts
             fcabLatch.await(bootstrapTimeout, TimeUnit.MILLISECONDS);
@@ -206,6 +238,7 @@ public final class ZooKeeperClusterBootstrapImpl extends AbstractComponent imple
                 }
             }
             File karafData = new File(data);
+            LOGGER.info("GG: cleanInternal() got configs: " + (configsSet == null ? "null" : java.util.Arrays.asList(configsSet)));
 
             // Setup the listener for unregistration of {@link BootstrapConfiguration}
             final CountDownLatch unregisterLatch = new CountDownLatch(1);
@@ -247,18 +280,25 @@ public final class ZooKeeperClusterBootstrapImpl extends AbstractComponent imple
             // org.ops4j.pax.web, which leads to an attempt to reconfigure Jetty with "profile:jetty.xml"
             // and if we disable ProfileUrlHandler we may loose Jetty instance
             LOGGER.debug("Disable BootstrapConfiguration");
+            LOGGER.info("GG: cleanInternal() disabling BootstrapConfiguration");
             ComponentContext componentContext = bootConfig.getComponentContext();
             componentContext.disableComponent(BootstrapConfiguration.COMPONENT_NAME);
+            LOGGER.info("GG: cleanInternal() disabled BootstrapConfiguration");
 
             if (!unregisterLatch.await(30, TimeUnit.SECONDS))
                 throw new TimeoutException("Timeout for unregistering BootstrapConfiguration service");
+            LOGGER.info("GG: cleanInternal() disabled BootstrapComplete - unregisterLatch counted down");
             if (unregisterLatch2 != null && !unregisterLatch2.await(30, TimeUnit.SECONDS))
                 throw new TimeoutException("Timeout for unregistering CuratorComplete service");
+            LOGGER.info("GG: cleanInternal() disabled BootstrapComplete - unregisterLatch2 counted down");
 
             // Do the cleanup
             runtimeProps.clearRuntimeAttributes();
+            LOGGER.info("GG: cleanInternal() cleanConfigurations");
             cleanConfigurations(syscontext, zkClientCfg, zkServerCfg);
+            LOGGER.info("GG: cleanInternal() cleanZookeeperDirectory");
             cleanZookeeperDirectory(karafData);
+            LOGGER.info("GG: cleanInternal() cleanGitDirectory");
             cleanGitDirectory(karafData);
 
             // Setup the registration listener for the new {@link BootstrapConfiguration}
@@ -279,9 +319,12 @@ public final class ZooKeeperClusterBootstrapImpl extends AbstractComponent imple
 
             // Enable the {@link BootstrapConfiguration} component and await the registration of the respective service
             LOGGER.debug("Enable BootstrapConfiguration");
+            LOGGER.info("GG: cleanInternal() enabling BootstrapConfiguration");
             componentContext.enableComponent(BootstrapConfiguration.COMPONENT_NAME);
+            LOGGER.info("GG: cleanInternal() enabled BootstrapConfiguration");
             if (!registerLatch.await(30, TimeUnit.SECONDS))
                 throw new TimeoutException("Timeout for registering BootstrapConfiguration service");
+            LOGGER.info("GG: cleanInternal() enabled BootstrapConfiguration - registerLatch counted down");
 
             return (BootstrapConfiguration) syscontext.getService(sref.get());
 
@@ -406,21 +449,33 @@ public final class ZooKeeperClusterBootstrapImpl extends AbstractComponent imple
         }
 
         void bootstrapFabric(String containerId, File homeDir, CreateEnsembleOptions options) throws Exception {
+            LOGGER.info("GG: bootstrapFabric(" + containerId + ", " + homeDir + ", " + options + ")");
             String connectionUrl = bootConfig.getConnectionUrl(options);
+            LOGGER.info("GG: bootstrapFabric(), connectionUrl = " + connectionUrl);
             DataStoreOptions bootOptions = new DataStoreOptions(containerId, homeDir, connectionUrl, options);
             runtimeProperties.putRuntimeAttribute(DataStoreTemplate.class, new DataStoreBootstrapTemplate(bootOptions));
 
+            LOGGER.info("GG: bootstrapFabric(), createOrUpdateDataStoreConfig()");
             bootConfig.createOrUpdateDataStoreConfig(options);
+            LOGGER.info("GG: bootstrapFabric(), createOrUpdateDataStoreConfig(), complete");
 
+            LOGGER.info("GG: bootstrapFabric(), createZooKeeeperServerConfig()");
             boolean success = bootConfig.createZooKeeeperServerConfig(sysContext, options);
+            LOGGER.info("GG: bootstrapFabric(), createZooKeeeperServerConfig(), complete");
+            LOGGER.info("GG: bootstrapFabric() awaiting for " + Constants.ZOOKEEPER_SERVER_PID);
             if (!success) {
                 throw new TimeoutException("Timeout waiting for " + Constants.ZOOKEEPER_SERVER_PID + " configuration update");
             }
+            LOGGER.info("GG: bootstrapFabric() awaiting for " + Constants.ZOOKEEPER_SERVER_PID + " - complete");
 
+            LOGGER.info("GG: bootstrapFabric(), createZooKeeeperClientConfig()");
             success = bootConfig.createZooKeeeperClientConfig(sysContext, connectionUrl, options);
+            LOGGER.info("GG: bootstrapFabric(), createZooKeeeperClientConfig(), complete");
+            LOGGER.info("GG: bootstrapFabric() awaiting for " + Constants.ZOOKEEPER_CLIENT_PID);
             if (!success) {
                 throw new TimeoutException("Timeout waiting for " + Constants.ZOOKEEPER_CLIENT_PID + " configuration update");
             }
+            LOGGER.info("GG: bootstrapFabric() awaiting for " + Constants.ZOOKEEPER_CLIENT_PID + " - complete");
         }
 
         private void waitForContainerAlive(String containerName, BundleContext syscontext, long timeout) throws TimeoutException {
@@ -430,10 +485,14 @@ public final class ZooKeeperClusterBootstrapImpl extends AbstractComponent imple
             long now = System.currentTimeMillis();
             long end = now + timeout;
             while (!Thread.interrupted() && (now = System.currentTimeMillis()) < end) {
+                LOGGER.info("GG getRequiredService(FabricService.class)");
                 FabricService fabricService = ServiceLocator.getRequiredService(FabricService.class);
+                LOGGER.info("GG getRequiredService(FabricService.class) complete");
                 try {
+                    LOGGER.info("GG fabricService.getContainer(" + containerName + ")");
                     Container container = fabricService.getContainer(containerName);
                     if (container != null && container.isAlive()) {
+                        LOGGER.info("GG fabricService.getContainer(" + containerName + ") complete and alive");
                         return;
                     } 
                 } catch (Exception ex) {
@@ -441,6 +500,7 @@ public final class ZooKeeperClusterBootstrapImpl extends AbstractComponent imple
                 }
                 if (lastException != null) {
                     LOGGER.debug("lastException = " + lastException);
+                    LOGGER.info("GG: waitForContainerAlive: Exception: " + lastException.getMessage(), lastException);
                 }
 
                 try { 

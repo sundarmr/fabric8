@@ -88,10 +88,12 @@ public class SimpleDownloadTask extends AbstractRetryableDownloadTask {
 
             File tmpFile = File.createTempFile("download-", null, dir);
 
+            LOG.info("GG: starting to download " + s);
             try (InputStream is = urlObj.openStream();
                  OutputStream os = new FileOutputStream(tmpFile)) {
                 IOHelpers.copy(is, os);
             }
+            LOG.info("GG: downloaded " + s + " to " + tmpFile);
 
             if (file.exists() && !file.delete()) {
                 throw new IOException("Unable to delete file: " + file.toString());
@@ -100,6 +102,7 @@ public class SimpleDownloadTask extends AbstractRetryableDownloadTask {
             if (!tmpFile.renameTo(file)) {
                 throw new IOException("Unable to rename file " + tmpFile.toString() + " to " + file.toString());
             }
+            LOG.info("GG: renamed " + tmpFile + " to " + file);
             return file;
         } catch (IOException ignore) {
             // go on with next repository

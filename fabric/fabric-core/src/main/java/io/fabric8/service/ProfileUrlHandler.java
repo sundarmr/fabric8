@@ -42,6 +42,8 @@ import io.fabric8.api.scr.ValidationSupport;
 import io.fabric8.api.gravia.IllegalStateAssertion;
 import org.osgi.service.url.AbstractURLStreamHandlerService;
 import org.osgi.service.url.URLStreamHandlerService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ThreadSafe
 @Component(name = "io.fabric8.profile.urlhandler", label = "Fabric8 Profile URL Handler", immediate = true, metatype = false)
@@ -52,6 +54,7 @@ import org.osgi.service.url.URLStreamHandlerService;
 public final class ProfileUrlHandler extends AbstractURLStreamHandlerService implements Validatable {
 
     private static final String SYNTAX = "profile:<resource name>";
+    public static final Logger LOGGER = LoggerFactory.getLogger(ProfileUrlHandler.class);
 
     @Reference(referenceInterface = FabricService.class)
     private final ValidatingReference<FabricService> fabricService = new ValidatingReference<FabricService>();
@@ -60,11 +63,13 @@ public final class ProfileUrlHandler extends AbstractURLStreamHandlerService imp
 
     @Activate
     void activate() {
+        LOGGER.info("GG: ProfileUrlHandler.activate(): " + System.identityHashCode(this));
         active.setValid();
     }
 
     @Deactivate
     void deactivate() {
+        LOGGER.info("GG: ProfileUrlHandler.deactivate(): " + System.identityHashCode(this));
         active.setInvalid();;
     }
 
@@ -106,6 +111,7 @@ public final class ProfileUrlHandler extends AbstractURLStreamHandlerService imp
 
         @Override
         public InputStream getInputStream() throws IOException {
+            LOGGER.info("GG: ProfileUrlHandler(" + System.identityHashCode(ProfileUrlHandler.this) + ").Connection(" + this.getURL() + ").getInputStream(). fabricService: " + System.identityHashCode(fabricService.get()));
             assertValid();
             String path = url.getPath();
             Container container = fabricService.get().getCurrentContainer();

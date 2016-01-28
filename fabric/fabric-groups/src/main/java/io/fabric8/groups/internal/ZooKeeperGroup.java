@@ -111,6 +111,7 @@ public class ZooKeeperGroup<T extends NodeState> implements Group<T> {
     private final ConnectionStateListener connectionStateListener = new ConnectionStateListener() {
         @Override
         public void stateChanged(CuratorFramework client, ConnectionState newState) {
+            LOG.info("GG: ZooKeeperGroup " + System.identityHashCode(ZooKeeperGroup.this) + " stateChanged for curator: " + System.identityHashCode(client) + ": " + newState);
             handleStateChange(newState);
         }
     };
@@ -150,6 +151,7 @@ public class ZooKeeperGroup<T extends NodeState> implements Group<T> {
      * Start the cache. The cache is not started automatically. You must call this method.
      */
     public void start() {
+        LOG.info("GG: starting ZooKeeperGroup " + System.identityHashCode(this) + " for path: " + this.path + " and curator " + client);
         if (started.compareAndSet(false, true)) {
             connected.set(client.getZookeeperClient().isConnected());
 
@@ -525,7 +527,9 @@ public class ZooKeeperGroup<T extends NodeState> implements Group<T> {
     private void mainLoop() {
         while (started.get() && !Thread.currentThread().isInterrupted()) {
             try {
-                operations.take().invoke();
+                Operation operation = operations.take();
+                LOG.info("GG: ZooKeeperGroup " + System.identityHashCode(ZooKeeperGroup.this) + ": invoking " + operation.getClass().getName() + "@" + System.identityHashCode(operation));
+                operation.invoke();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
@@ -554,6 +558,7 @@ public class ZooKeeperGroup<T extends NodeState> implements Group<T> {
     }
 
     private void offerOperation(Operation operation) {
+        LOG.info("GG: ZKG: offering " + operation.getClass().getName() + "@" + System.identityHashCode(operation));
         if (!operations.contains(operation)) {
             operations.offer(operation);
         }

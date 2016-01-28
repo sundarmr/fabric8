@@ -19,8 +19,12 @@ import java.io.File;
 import java.util.concurrent.ScheduledExecutorService;
 
 import io.fabric8.maven.MavenResolver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MavenDownloadTask extends AbstractRetryableDownloadTask {
+
+    public static Logger LOG = LoggerFactory.getLogger(MavenDownloadTask.class);
 
     private final MavenResolver resolver;
 
@@ -30,7 +34,10 @@ public class MavenDownloadTask extends AbstractRetryableDownloadTask {
     }
 
     protected File download() throws Exception {
-        return resolver.download(url);
+        LOG.info("GG: download(" + url + ")");
+        File download = resolver.download(url);
+        LOG.info("GG: download(" + url + "): " + download);
+        return download;
     }
 
 }

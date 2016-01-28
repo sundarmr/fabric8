@@ -105,6 +105,7 @@ public final class ManagedCuratorFramework extends AbstractComponent implements 
         final AtomicInteger retryCount = new AtomicInteger(0);
 
         State(CuratorConfig configuration) {
+            LOGGER.info("GG: Creating state: " + System.identityHashCode(this));
             this.configuration = configuration;
         }
 
@@ -113,15 +114,18 @@ public final class ManagedCuratorFramework extends AbstractComponent implements 
                 // ENTESB-2111: first unregister CuratorFramework service, as it might be used in @Deactivate
                 // methods of SCR components which depend on CF
                 if (registration != null) {
+                    LOGGER.info("GG: State: " + System.identityHashCode(this) + ": unregistering: " + System.identityHashCode(registration));
                     registration.unregister();
                     registration = null;
                 }
                 if (curatorCompleteRegistration != null) {
+                    LOGGER.info("GG: State: " + System.identityHashCode(this) + ": unregistering CuratorComplete service: " + System.identityHashCode(curatorCompleteRegistration));
                     curatorCompleteRegistration.unregister();
                     curatorCompleteRegistration = null;
                 }
                 // then stop it
                 if (curator != null) {
+                    LOGGER.info("GG: State: " + System.identityHashCode(this) + ": stopping curator: " + System.identityHashCode(curator));
                     curator.getZookeeperClient().stop();
                 }
                 try {
@@ -131,12 +135,16 @@ public final class ManagedCuratorFramework extends AbstractComponent implements 
                 }
                 curator = null;
                 if (!closed.get()) {
+                    LOGGER.info("GG: State: " + System.identityHashCode(this) + ": building new curator");
                     curator = buildCuratorFramework(configuration);
+                    LOGGER.info("GG: State: " + System.identityHashCode(this) + ": build new curator: " + System.identityHashCode(curator));
                     curator.getConnectionStateListenable().addListener(this, executor);
                     curator.getUnhandledErrorListenable().addListener(this, executor);
 
                         try {
+                            LOGGER.info("GG: State: " + System.identityHashCode(this) + ": starting curator: " + System.identityHashCode(curator));
                             curator.start();
+                            LOGGER.info("GG: State: " + System.identityHashCode(this) + ": started curator: " + System.identityHashCode(curator));
                         } catch (Exception e){
                             LOGGER.warn("Unable to start ZookeeperClient", e);
                         }
@@ -149,18 +157,24 @@ public final class ManagedCuratorFramework extends AbstractComponent implements 
 
         @Override
         public void stateChanged(CuratorFramework client, ConnectionState newState) {
+            LOGGER.info("GG: MCF(" + System.identityHashCode(ManagedCuratorFramework.this) + "): state changed for curator " + System.identityHashCode(client) + ": " + newState);
             if (newState == ConnectionState.CONNECTED || newState == ConnectionState.READ_ONLY || newState == ConnectionState.RECONNECTED) {
                 retryCount.set(0);
                 if (registration == null) {
+                    LOGGER.info("GG: State: " + System.identityHashCode(this) + ": registering registration for curator: " + System.identityHashCode(curator));
                     // this is where the magic happens...
                     registration = bundleContext.registerService(CuratorFramework.class, curator, null);
                     // 12 (at least) seconds passed, >100 SCR components were activated
+                    LOGGER.info("GG: State: " + System.identityHashCode(this) + ": registered registration " + System.identityHashCode(registration) + " for curator " + System.identityHashCode(curator));
                     curatorCompleteRegistration = bundleContext.registerService(CuratorComplete.class, new CuratorCompleteService(), null);
                 }
             }
+            LOGGER.info("GG: State: " + System.identityHashCode(this) + ": calling listeners for curator: " + System.identityHashCode(curator));
             for (ConnectionStateListener listener : connectionStateListeners) {
+
                 listener.stateChanged(client, newState);
             }
+            LOGGER.info("GG: State: " + System.identityHashCode(this) + ": called listeners for curator: " + System.identityHashCode(curator));
             if (newState == ConnectionState.LOST) {
                 try {
                     run();
@@ -174,13 +188,15 @@ public final class ManagedCuratorFramework extends AbstractComponent implements 
 
         public void close() {
             closed.set(true);
-            CuratorFramework curator = this.curator;
-            if (curator != null) {
-                for (ConnectionStateListener listener : connectionStateListeners) {
-                    listener.stateChanged(curator, ConnectionState.LOST);
-                }
-                curator.getZookeeperClient().stop();
-            }
+            LOGGER.info("GG: State.close(), closed.set(true): " + System.identityHashCode(this) + ", submitting this State");
+//            CuratorFramework curator = this.curator;
+//            if (curator != null) {
+//                for (ConnectionStateListener listener : connectionStateListeners) {
+//                    listener.stateChanged(curator, ConnectionState.LOST);
+//                }
+//                LOGGER.info("GG: State.close(): " + System.identityHashCode(this) + ": called listeners for curator: " + System.identityHashCode(curator));
+//                curator.getZookeeperClient().stop();
+//            }
             try {
                 executor.submit(this).get();
             } catch (Exception e) {
@@ -292,9 +308,11 @@ public final class ManagedCuratorFramework extends AbstractComponent implements 
         connectionStateListeners.add(connectionStateListener);
         State curr = state.get();
         CuratorFramework curator = curr != null ? curr.curator : null;
+        LOGGER.info("GG: MCF.bindConnectionStateListener(): " + System.identityHashCode(this) + ": added: " + connectionStateListener + " to curator " + System.identityHashCode(curator) + " invoking its stateChanged");
         if (curator != null && curator.getZookeeperClient().isConnected()) {
             connectionStateListener.stateChanged(curator, ConnectionState.CONNECTED);
         }
+        LOGGER.info("GG: MCF.bindConnectionStateListener(): " + System.identityHashCode(this) + ": invoked stateChanged for " + connectionStateListener + " for curator " + System.identityHashCode(curator));
     }
 
     void unbindConnectionStateListener(ConnectionStateListener connectionStateListener) {

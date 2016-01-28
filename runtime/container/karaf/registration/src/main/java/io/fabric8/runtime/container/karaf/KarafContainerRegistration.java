@@ -217,6 +217,7 @@ public final class KarafContainerRegistration extends AbstractComponent implemen
 
     @Override
     public void stateChanged(CuratorFramework client, ConnectionState newState) {
+        LOGGER.info("GG: KCR(" + System.identityHashCode(this) + "): state changed for curator " + System.identityHashCode(client) + ": " + newState);
         if (isValid()) {
             switch (newState) {
             case CONNECTED:

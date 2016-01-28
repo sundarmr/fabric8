@@ -43,6 +43,7 @@ import org.junit.runner.RunWith;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test basic {@link FabricService} functionality
@@ -52,6 +53,7 @@ import org.slf4j.Logger;
 @RunWith(Arquillian.class)
 public class ContainerStartupTest {
 
+    public static Logger LOG = LoggerFactory.getLogger(ContainerStartupTest.class);
     private static final String ADMIN_PASSWORD = "admin";
 
     @Deployment
@@ -77,12 +79,15 @@ public class ContainerStartupTest {
 
     @Test
     public void testLocalFabricCluster() throws Exception {
+        LoggerFactory.getLogger(this.getClass()).info("GG: ########### ContainerStartupTest #########");
 
         Builder<?> builder = CreateEnsembleOptions.builder().agentEnabled(false).clean(true).zookeeperPassword(ADMIN_PASSWORD).waitForProvision(false);
         CreateEnsembleOptions options = builder.build();
 
         ZooKeeperClusterBootstrap bootstrap = ServiceLocator.getRequiredService(ZooKeeperClusterBootstrap.class);
+        LOG.info("GG: testLocalFabricCluster::bootstrap.create()");
         bootstrap.create(options);
+        LOG.info("GG: testLocalFabricCluster::bootstrap.create() complete");
 
         FabricService fabricService = ServiceLocator.getRequiredService(FabricService.class);
         Container[] containers = fabricService.getContainers();
@@ -93,5 +98,6 @@ public class ContainerStartupTest {
         org.osgi.service.cm.Configuration configuration = configurationAdmin.getConfiguration(io.fabric8.api.Constants.ZOOKEEPER_CLIENT_PID);
         Dictionary<String, Object> dictionary = configuration.getProperties();
         Assert.assertEquals("Expected provided zookeeper password", PasswordEncoder.encode(ADMIN_PASSWORD), dictionary.get("zookeeper.password"));
+        LoggerFactory.getLogger(this.getClass()).info("GG: ########### /ContainerStartupTest #########");
     }
 }

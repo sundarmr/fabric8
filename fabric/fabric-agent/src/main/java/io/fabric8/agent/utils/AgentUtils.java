@@ -196,6 +196,7 @@ public class AgentUtils {
             throws MultiException, InterruptedException, MalformedURLException {
         final Map<String, Repository> repositories = new HashMap<>();
         final Downloader downloader = manager.createDownloader();
+        LOGGER.info("GG: downloader(" + System.identityHashCode(downloader) + ") created");
         for (String uri : uris) {
             downloader.download(uri, new DownloadCallback() {
                 @Override
@@ -215,7 +216,9 @@ public class AgentUtils {
         return new Callable<Map<String, Repository>>() {
             @Override
             public Map<String, Repository> call() throws Exception {
+                LOGGER.info("GG: downloader(" + System.identityHashCode(downloader) + ") await()...");
                 downloader.await();
+                LOGGER.info("GG: downloader(" + System.identityHashCode(downloader) + ") await() complete");
                 return repositories;
             }
         };

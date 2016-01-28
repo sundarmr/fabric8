@@ -15,12 +15,6 @@
  */
 package io.fabric8.zookeeper.bootstrap;
 
-import io.fabric8.api.Constants;
-import io.fabric8.api.RuntimeProperties;
-import io.fabric8.api.jcip.ThreadSafe;
-import io.fabric8.api.scr.AbstractComponent;
-import io.fabric8.api.scr.ValidatingReference;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -29,6 +23,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import io.fabric8.api.Constants;
+import io.fabric8.api.RuntimeProperties;
+import io.fabric8.api.jcip.ThreadSafe;
+import io.fabric8.api.scr.AbstractComponent;
+import io.fabric8.api.scr.ValidatingReference;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.ConfigurationPolicy;

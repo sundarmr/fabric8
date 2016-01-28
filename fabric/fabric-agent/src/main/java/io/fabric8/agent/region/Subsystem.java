@@ -48,6 +48,8 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 import org.osgi.resource.Requirement;
 import org.osgi.resource.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.fabric8.agent.resolver.ResourceUtils.TYPE_FEATURE;
 import static io.fabric8.agent.resolver.ResourceUtils.TYPE_SUBSYSTEM;
@@ -63,6 +65,8 @@ import static org.osgi.framework.namespace.IdentityNamespace.CAPABILITY_VERSION_
 import static org.osgi.framework.namespace.IdentityNamespace.IDENTITY_NAMESPACE;
 
 public class Subsystem extends ResourceImpl {
+
+    public static Logger LOG = LoggerFactory.getLogger(Subsystem.class);
 
     private static final String ALL_FILTER = "(|(!(all=*))(all=*))";
 
@@ -327,6 +331,7 @@ public class Subsystem extends ResourceImpl {
         }
         final Map<String, ResourceImpl> bundles = new ConcurrentHashMap<>();
         final Downloader downloader = manager.createDownloader();
+        LOG.info("GG: downloader(" + System.identityHashCode(downloader) + ") created");
         final Map<BundleInfo, Conditional> infos = new HashMap<>();
         if (feature != null) {
             for (Conditional cond : feature.getConditional()) {
@@ -352,7 +357,9 @@ public class Subsystem extends ResourceImpl {
             final String loc = Overrides.extractUrl(override);
             downloader.download(loc, callback);
         }
+        LOG.info("GG: downloader(" + System.identityHashCode(downloader) + ") await()...");
         downloader.await();
+        LOG.info("GG: downloader(" + System.identityHashCode(downloader) + ") await() complete");
         Overrides.override(bundles, overrides);
         if (feature != null) {
             // Add conditionals

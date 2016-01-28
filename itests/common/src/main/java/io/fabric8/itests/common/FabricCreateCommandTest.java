@@ -42,6 +42,7 @@ import org.junit.runner.RunWith;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test the fabric:create command
@@ -78,6 +79,7 @@ public class FabricCreateCommandTest {
 
     @Test
     public void testLocalFabricCluster() throws Exception {
+        LoggerFactory.getLogger(this.getClass()).info("GG: ########### FabricCreateCommandTest #########");
 
         CommandSupport.executeCommand("fabric:create --force --clean -n");
 
@@ -90,5 +92,6 @@ public class FabricCreateCommandTest {
         org.osgi.service.cm.Configuration configuration = configurationAdmin.getConfiguration(io.fabric8.api.Constants.ZOOKEEPER_CLIENT_PID);
         Dictionary<String, Object> dictionary = configuration.getProperties();
         Assert.assertEquals("Expected provided zookeeper password", PasswordEncoder.encode(ADMIN_PASSWORD), dictionary.get("zookeeper.password"));
+        LoggerFactory.getLogger(this.getClass()).info("GG: ########### /FabricCreateCommandTest #########");
     }
 }

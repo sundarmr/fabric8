@@ -24,6 +24,7 @@ import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test client side {@link ProfileManagement} test via jolokia
@@ -40,6 +41,7 @@ public class ProfileManagementJolokiaTest extends AbstractProfileManagementTest 
     
     @BeforeClass
     public static void beforeClass() throws Exception {
+        LoggerFactory.getLogger(ProfileManagementJolokiaTest.class).info("GG: ########### ProfileManagementJolokiaTest #########");
         String jmxServiceURL = "http://127.0.0.1:8181/jolokia";
         proxy = JolokiaMXBeanProxy.getMXBeanProxy(jmxServiceURL, new ObjectName(ProfileManagement.OBJECT_NAME), ProfileManagement.class, credentials[0], credentials[1]);
     }
